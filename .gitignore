@@ -3,3 +3,4 @@ config.py
 *.pyc
 *.zip
 .DS_Store
+courtneycookbook_web/
