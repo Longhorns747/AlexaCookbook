@@ -88,18 +88,7 @@ def get_ingredients(intent):
         card_title = intent['slots']['Recipie']['value']
         
         recipie = intent['slots']['Recipie']['value']
-        
-        client = document_client.DocumentClient(config.DOCUMENTDB_HOST, {'masterKey': config.DOCUMENTDB_KEY})
-
-        # Read databases and take first since id should not be duplicated.
-        db = next((data for data in client.ReadDatabases() if data['id'] == config.DOCUMENTDB_DATABASE))
-
-        # Read collections and take first since id should not be duplicated.
-        coll = next((coll for coll in client.ReadCollections(db['_self']) if coll['id'] == config.DOCUMENTDB_COLLECTION))
-
-        # Read documents and take first since id should not be duplicated.
-        doc = next((doc for doc in client.ReadDocuments(coll['_self']) if doc['id'] == recipie))
-        ingredients = doc['ingredients']
+        ingredients = get_ingredients_for_recipie(recipie)
         ingredients_string = ''
         
         for ingredient in ingredients:
@@ -128,18 +117,8 @@ def get_how_much_ingredient(intent):
         
         recipie = intent['slots']['Recipie']['value']
         ingredient = intent['slots']['Ingredient']['value']
+        ingredients = get_ingredients_for_recipie(recipie)
         
-        client = document_client.DocumentClient(config.DOCUMENTDB_HOST, {'masterKey': config.DOCUMENTDB_KEY})
-
-        # Read databases and take first since id should not be duplicated.
-        db = next((data for data in client.ReadDatabases() if data['id'] == config.DOCUMENTDB_DATABASE))
-
-        # Read collections and take first since id should not be duplicated.
-        coll = next((coll for coll in client.ReadCollections(db['_self']) if coll['id'] == config.DOCUMENTDB_COLLECTION))
-
-        # Read documents and take first since id should not be duplicated.
-        doc = next((doc for doc in client.ReadDocuments(coll['_self']) if doc['id'] == recipie))
-        ingredients = doc['ingredients']
         ingredient_value = ingredients[ingredient]
         
         speech_output = "You need " + ingredient_value + \
@@ -169,6 +148,19 @@ def get_welcome_response():
     should_end_session = True
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
+
+def get_ingredients_for_recipie(recipie):
+    client = document_client.DocumentClient(config.DOCUMENTDB_HOST, {'masterKey': config.DOCUMENTDB_KEY})
+
+    # Read databases and take first since id should not be duplicated.
+    db = next((data for data in client.ReadDatabases() if data['id'] == config.DOCUMENTDB_DATABASE))
+
+    # Read collections and take first since id should not be duplicated.
+    coll = next((coll for coll in client.ReadCollections(db['_self']) if coll['id'] == config.DOCUMENTDB_COLLECTION))
+
+    # Read documents and take first since id should not be duplicated.
+    doc = next((doc for doc in client.ReadDocuments(coll['_self']) if doc['id'] == recipie))
+    return doc['ingredients']
         
 # --------------- Helpers that build all of the responses ----------------------
 
