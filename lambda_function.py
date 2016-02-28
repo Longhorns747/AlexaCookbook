@@ -8,6 +8,8 @@ http://amzn.to/1LGWsLG
 """
 
 from __future__ import print_function
+import config
+import pydocumentdb.document_client as document_client
 
 def lambda_handler(event, context):
     """ Route the incoming request based on type (LaunchRequest, IntentRequest,
@@ -65,10 +67,8 @@ def on_intent(intent_request, session):
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
-    if intent_name == "MyColorIsIntent":
-        return set_color_in_session(intent, session)
-    elif intent_name == "WhatsMyColorIntent":
-        return get_color_from_session(intent, session)
+    if intent_name == "GetIngredients":
+        return get_ingredients(intent)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     else:
@@ -86,6 +86,44 @@ def on_session_ended(session_ended_request, session):
 
 # --------------- Functions that control the skill's behavior ------------------
 
+def get_ingredients(intent):
+    card_title = intent['name']
+    should_end_session = True
+    
+    if 'Recipie' in intent['slots']:
+        card_title = intent['slots']['Recipie']['value']
+        
+        recipie = intent['slots']['Recipie']['value']
+        
+        client = document_client.DocumentClient(config.DOCUMENTDB_HOST, {'masterKey': config.DOCUMENTDB_KEY})
+
+        # Read databases and take first since id should not be duplicated.
+        db = next((data for data in client.ReadDatabases() if data['id'] == config.DOCUMENTDB_DATABASE))
+
+        # Read collections and take first since id should not be duplicated.
+        coll = next((coll for coll in client.ReadCollections(db['_self']) if coll['id'] == config.DOCUMENTDB_COLLECTION))
+
+        # Read documents and take first since id should not be duplicated.
+        doc = next((doc for doc in client.ReadDocuments(coll['_self']) if doc['id'] == recipie))
+        ingredients = doc['ingredients']
+        ingredients_string = ''
+        
+        for ingredient in ingredients:
+            ingredients_string += ingredient + ", "
+        
+        ingredients_string = ingredients_string[:-2
+        
+        speech_output = "You need " + \
+                        ingredients_string + \
+                        " to make " + recipie + "."
+    else:
+        speech_output = "Sorry, I don't know that recipie " \
+                        "Please try again."
+    
+    reprompt_text = None
+                        
+    return build_speechlet_response(card_title, speech_output, reprompt_text, should_end_session)
+    
 
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
@@ -94,14 +132,13 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to the Alexa Skills Kit sample. " \
-                    "Please tell me your favorite color by saying, " \
-                    "my favorite color is red"
+    speech_output = "This is Courtney's cookbook. Ask about ingredients for recipies."
+    
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Please tell me your favorite color by saying, " \
-                    "my favorite color is red."
-    should_end_session = False
+    reprompt_text = None
+    
+    should_end_session = True
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 

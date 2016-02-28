@@ -1,2 +1,5 @@
 pydocumentdb*
 config.py
+*.pyc
+*.zip
+.DS_Store
