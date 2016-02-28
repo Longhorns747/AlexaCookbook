@@ -111,7 +111,7 @@ def get_ingredients(intent):
         for ingredient in ingredients:
             ingredients_string += ingredient + ", "
         
-        ingredients_string = ingredients_string[:-2
+        ingredients_string = ingredients_string[:-2]
         
         speech_output = "You need " + \
                         ingredients_string + \
